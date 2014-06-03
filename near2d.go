@@ -7,12 +7,12 @@ const (
 	vertical
 )
 
-type point struct {
+type Point struct {
 	X, Y float64
 }
 
 type rectangle struct {
-	Min, Max point
+	Min, Max Point
 }
 
 type split struct {
@@ -22,7 +22,7 @@ type split struct {
 
 type Tree struct {
 	rect        rectangle
-	point       *point
+	point       *Point
 	fence       *split
 	firstChild  *Tree
 	secondChild *Tree
@@ -33,19 +33,19 @@ func sq(x float64) float64 {
 }
 
 func rect(x0, y0, x1, y1 float64) rectangle {
-	return rectangle{point{x0, y0}, point{x1, y1}}
+	return rectangle{Point{x0, y0}, Point{x1, y1}}
 }
 
-func Pt(x, y float64) point {
-	return point{x, y}
+func Pt(x, y float64) Point {
+	return Point{x, y}
 }
 
 // Simplified distance
-func (p0 point) dist(p1 point) float64 {
+func (p0 Point) dist(p1 Point) float64 {
 	return sq(p0.X-p1.X) + sq(p0.Y-p1.Y)
 }
 
-func (p point) dist2(r rectangle) float64 {
+func (p Point) dist2(r rectangle) float64 {
 	cx := math.Max(r.Min.X, math.Min(p.X, r.Max.X))
 	cy := math.Max(r.Min.Y, math.Min(p.Y, r.Max.Y))
 	return p.dist(Pt(cx, cy))
@@ -55,7 +55,7 @@ func NewTree(x1, y1, x2, y2 float64) *Tree {
 	return &Tree{rect: rect(x1, y1, x2, y2)}
 }
 
-func (t *Tree) Add(p point) {
+func (t *Tree) Add(p Point) {
 	if t.fence == nil && t.point == nil {
 		t.point = &p
 	} else if t.fence == nil {
@@ -86,7 +86,7 @@ func (t *Tree) Add(p point) {
 	}
 }
 
-func (p point) nearestChild(t *Tree) *Tree {
+func (p Point) nearestChild(t *Tree) *Tree {
 	var at float64
 	switch t.fence.kind {
 	case horizontal:
@@ -101,7 +101,7 @@ func (p point) nearestChild(t *Tree) *Tree {
 	}
 }
 
-func (p point) nearestPoint(t *Tree, nearest *point, dmin float64, remains []*Tree) (*point, float64, []*Tree) {
+func (p Point) nearestPoint(t *Tree, nearest *Point, dmin float64, remains []*Tree) (*Point, float64, []*Tree) {
 	if t.point != nil {
 		d := p.dist(*t.point)
 		if d < dmin {
@@ -120,10 +120,10 @@ func (p point) nearestPoint(t *Tree, nearest *point, dmin float64, remains []*Tr
 	}
 }
 
-func (t *Tree) NearestNeighbor(p point) (point, float64) {
+func (t *Tree) NearestNeighbor(p Point) (Point, float64) {
 	var (
 		remains []*Tree
-		nearest *point
+		nearest *Point
 		dmin    = math.Inf(1)
 	)
 	nearest, dmin, remains = p.nearestPoint(t, nearest, dmin, remains)
