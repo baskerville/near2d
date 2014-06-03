@@ -7,74 +7,70 @@ const (
 	vertical
 )
 
-type Point struct {
+type point struct {
 	X, Y float64
 }
 
-type Rectangle struct {
-	Min, Max Point
+type rectangle struct {
+	Min, Max point
 }
 
-type Split struct {
+type split struct {
 	kind byte
 	at   float64
 }
 
-type Tree struct {
-	rect        Rectangle
-	point       *Point
-	split       *Split
-	firstChild  *Tree
-	secondChild *Tree
+type tree struct {
+	rect        rectangle
+	point       *point
+	fence       *split
+	firstChild  *tree
+	secondChild *tree
 }
 
 func sq(x float64) float64 {
 	return x * x
 }
 
-func Rect(x0, y0, x1, y1 float64) Rectangle {
-	return Rectangle{Point{x0, y0}, Point{x1, y1}}
+func rect(x0, y0, x1, y1 float64) rectangle {
+	return rectangle{point{x0, y0}, point{x1, y1}}
 }
 
-func Pt(x, y float64) Point {
-	return Point{x, y}
-}
-
-func (p0 Point) Add(p1 Point) Point {
-	return Point{p0.X + p1.X, p0.Y + p1.Y}
+func Pt(x, y float64) point {
+	return point{x, y}
 }
 
 // Simplified distance
-func (p0 Point) dist(p1 Point) float64 {
+func (p0 point) dist(p1 point) float64 {
 	return sq(p0.X-p1.X) + sq(p0.Y-p1.Y)
 }
 
-func (p Point) dist2(r Rectangle) float64 {
+func (p point) dist2(r rectangle) float64 {
 	cx := math.Max(r.Min.X, math.Min(p.X, r.Max.X))
 	cy := math.Max(r.Min.Y, math.Min(p.Y, r.Max.Y))
 	return p.dist(Pt(cx, cy))
 }
 
-func NewTree(x1, y1, x2, y2 float64) *Tree {
-	return &Tree{rect: Rect(x1, y1, x2, y2)}
+func NewTree(x1, y1, x2, y2 float64) *tree {
+	return &tree{rect: rect(x1, y1, x2, y2)}
 }
 
-func (t *Tree) Add(p Point) {
-	if t.split == nil && t.point == nil {
+func (t *tree) Add(p point) {
+	if t.fence == nil && t.point == nil {
 		t.point = &p
-	} else if t.split == nil {
+	} else if t.fence == nil {
 		var delta float64
 		dX := p.X - t.point.X
 		dY := p.Y - t.point.Y
 		if math.Abs(dY) > math.Abs(dX) {
-			t.split = &Split{horizontal, (t.point.Y + p.Y) / 2}
-			t.firstChild = NewTree(t.rect.Min.X, t.rect.Min.Y, t.rect.Max.X, t.split.at)
-			t.secondChild = NewTree(t.rect.Min.X, t.split.at, t.rect.Max.X, t.rect.Max.Y)
+			t.fence = &split{horizontal, (t.point.Y + p.Y) / 2}
+			t.firstChild = NewTree(t.rect.Min.X, t.rect.Min.Y, t.rect.Max.X, t.fence.at)
+			t.secondChild = NewTree(t.rect.Min.X, t.fence.at, t.rect.Max.X, t.rect.Max.Y)
 			delta = dY
 		} else {
-			t.split = &Split{vertical, (t.point.X + p.X) / 2}
-			t.firstChild = NewTree(t.rect.Min.X, t.rect.Min.Y, t.split.at, t.rect.Max.Y)
-			t.secondChild = NewTree(t.split.at, t.rect.Min.Y, t.rect.Max.X, t.rect.Max.Y)
+			t.fence = &split{vertical, (t.point.X + p.X) / 2}
+			t.firstChild = NewTree(t.rect.Min.X, t.rect.Min.Y, t.fence.at, t.rect.Max.Y)
+			t.secondChild = NewTree(t.fence.at, t.rect.Min.Y, t.rect.Max.X, t.rect.Max.Y)
 			delta = dX
 		}
 		if delta > 0 {
@@ -90,22 +86,22 @@ func (t *Tree) Add(p Point) {
 	}
 }
 
-func (p Point) nearestChild(t *Tree) *Tree {
+func (p point) nearestChild(t *tree) *tree {
 	var at float64
-	switch t.split.kind {
+	switch t.fence.kind {
 	case horizontal:
 		at = p.Y
 	case vertical:
 		at = p.X
 	}
-	if at < t.split.at {
+	if at < t.fence.at {
 		return t.firstChild
 	} else {
 		return t.secondChild
 	}
 }
 
-func (p Point) nearestPoint(t *Tree, nearest *Point, dmin float64, remains []*Tree) (*Point, float64, []*Tree) {
+func (p point) nearestPoint(t *tree, nearest *point, dmin float64, remains []*tree) (*point, float64, []*tree) {
 	if t.point != nil {
 		d := p.dist(*t.point)
 		if d < dmin {
@@ -124,10 +120,10 @@ func (p Point) nearestPoint(t *Tree, nearest *Point, dmin float64, remains []*Tr
 	}
 }
 
-func (t *Tree) NearestNeighbor(p Point) (Point, float64) {
+func (t *tree) NearestNeighbor(p point) (point, float64) {
 	var (
-		remains []*Tree
-		nearest *Point
+		remains []*tree
+		nearest *point
 		dmin    = math.Inf(1)
 	)
 	nearest, dmin, remains = p.nearestPoint(t, nearest, dmin, remains)
