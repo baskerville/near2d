@@ -20,12 +20,12 @@ type split struct {
 	at   float64
 }
 
-type tree struct {
+type Tree struct {
 	rect        rectangle
 	point       *point
 	fence       *split
-	firstChild  *tree
-	secondChild *tree
+	firstChild  *Tree
+	secondChild *Tree
 }
 
 func sq(x float64) float64 {
@@ -51,11 +51,11 @@ func (p point) dist2(r rectangle) float64 {
 	return p.dist(Pt(cx, cy))
 }
 
-func NewTree(x1, y1, x2, y2 float64) *tree {
-	return &tree{rect: rect(x1, y1, x2, y2)}
+func NewTree(x1, y1, x2, y2 float64) *Tree {
+	return &Tree{rect: rect(x1, y1, x2, y2)}
 }
 
-func (t *tree) Add(p point) {
+func (t *Tree) Add(p point) {
 	if t.fence == nil && t.point == nil {
 		t.point = &p
 	} else if t.fence == nil {
@@ -86,7 +86,7 @@ func (t *tree) Add(p point) {
 	}
 }
 
-func (p point) nearestChild(t *tree) *tree {
+func (p point) nearestChild(t *Tree) *Tree {
 	var at float64
 	switch t.fence.kind {
 	case horizontal:
@@ -101,7 +101,7 @@ func (p point) nearestChild(t *tree) *tree {
 	}
 }
 
-func (p point) nearestPoint(t *tree, nearest *point, dmin float64, remains []*tree) (*point, float64, []*tree) {
+func (p point) nearestPoint(t *Tree, nearest *point, dmin float64, remains []*Tree) (*point, float64, []*Tree) {
 	if t.point != nil {
 		d := p.dist(*t.point)
 		if d < dmin {
@@ -120,9 +120,9 @@ func (p point) nearestPoint(t *tree, nearest *point, dmin float64, remains []*tr
 	}
 }
 
-func (t *tree) NearestNeighbor(p point) (point, float64) {
+func (t *Tree) NearestNeighbor(p point) (point, float64) {
 	var (
-		remains []*tree
+		remains []*Tree
 		nearest *point
 		dmin    = math.Inf(1)
 	)
