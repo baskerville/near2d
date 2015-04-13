@@ -44,9 +44,8 @@ func (p0 Point) Add(p1 Point) Point {
 	return Point{p0.X + p1.X, p0.Y + p1.Y}
 }
 
-// Simplified distance
 func (p0 Point) dist(p1 Point) float64 {
-	return sq(p0.X-p1.X) + sq(p0.Y-p1.Y)
+	return math.Hypot(p0.X-p1.X, p0.Y-p1.Y)
 }
 
 func (p Point) dist2(r rectangle) float64 {
